@@ -1,0 +1,253 @@
+﻿@page "/adminpage"
+@inject HttpClient Http
+@inject AuthService AuthService
+@rendermode InteractiveServer
+
+@if(AuthService.IsAdmin)
+{
+    <div class="admin-container">
+        <h3>Add New Product</h3>
+        <EditForm Model="@product" OnValidSubmit="HandleProductSubmit" FormName="Product">
+            <DataAnnotationsValidator />
+            <div>
+                <label>Product Name:</label>
+                <InputText @bind-Value="product.Name" class="form-control" />
+            </div>
+            <div>
+                <label>Price:</label>
+                <InputNumber @bind-Value="product.Price" class="form-control" />
+            </div>
+            <div>
+                <label>Quantity:</label>
+                <InputNumber @bind-Value="product.Quantity" class="form-control" />
+            </div>
+            <div>
+                <label>Description:</label>
+                <InputText @bind-Value="product.Description" class="form-control" />
+            </div>
+            <div>
+                <label>Category:</label>
+                <InputSelect @bind-Value="product.Category" class="form-control">
+                    <option value="Fruits">Fruits</option>
+                    <option value="Snacks">Snacks</option>
+                    <option value="Drinks">Drinks</option>
+                </InputSelect>
+            </div>
+            <button type="submit" class="btn btn-primary">Add Product</button>
+        </EditForm>
+
+        <h3>Product List</h3>
+        @foreach(var category in products.Select(p => p.Category).Distinct())
+        {
+            <div>
+                <h4>@category</h4>
+                <ul>
+                    @foreach(var item in products.Where(p => p.Category == category))
+                    {
+                        <li>
+                            <div>
+                                @if(item.IsEditing)
+                                {
+                                    <InputText @bind-Value="item.Name" class="form-control" />
+                                    <InputNumber @bind-Value="item.Price" class="form-control" />
+                                    <InputNumber @bind-Value="item.Quantity" class="form-control" />
+                                    <InputNumber @bind-Value="item.Description" class="form-control" />
+                                    <InputNumber @bind-Value="item.Category" class="form-control" />
+                                    <button class="btn btn-success" @onclick="() => SaveProduct(item)">Save</button>
+                                    <button class="btn btn-secondary" @onclick="() => CancelEditProduct(item)">Cancel</button>
+                                }
+                                else
+                                {
+                                    <span>@item.Name - $@item.Price - @item.Quantity</span>
+                                    <button class="btn btn-warning" @onclick="() => item.IsEditing = true">Modify</button>
+                                    <button class="btn btn-danger" @onclick="() => RemoveProduct(item)">Remove</button>
+                                    <button class="btn btn-primary" @onclick="() => ToggleProduct(item)"> @(item.IsAvailable ? "Disable" : "Enable")</button>
+                                }
+                            </div>
+                        </li>
+                    }
+                </ul>
+            </div>
+        }
+
+        <h3>Customer List</h3>
+        <ul>
+            @foreach(var customer in customers)
+            {
+                <li>
+                    <span>@customer.FirstName @customer.LastName - @customer.Email</span>
+                    <button class="btn btn-danger" @onclick="() => RemoveCustomer(customer)">Remove</button>
+                    <button class="btn btn-warning" @onclick="() => editingCustomer = customer">Modify</button>
+                </li>
+            }
+        </ul>
+
+        @if(editingCustomer != null)
+        {
+            <h3>Edit Customer</h3>
+            <EditForm Model="@editingCustomer" OnValidSubmit="SaveCustomer" FormName="Product">
+                <div>
+                    <label>First Name:</label>
+                    <InputText @bind-Value="editingCustomer.FirstName" class="form-control" />
+                </div>
+                <div>
+                    <label>Last Name:</label>
+                    <InputText @bind-Value="editingCustomer.LastName" class="form-control" />
+                </div>
+                <div>
+                    <label>Email:</label>
+                    <InputText @bind-Value="editingCustomer.Email" class="form-control" />
+                </div>
+                <div>
+                    <label>Phone Number:</label>
+                    <InputText @bind-Value="editingCustomer.PhoneNumber" class="form-control" />
+                </div>
+                <div>
+                    <label>Adress:</label>
+                    <InputText @bind-Value="editingCustomer.Adress" class="form-control" />
+                </div>
+                <div>
+                    <label>Password:</label>
+                    <InputText @bind-Value="editingCustomer.Password" class="form-control" />
+                </div>
+                <button type="submit" class="btn btn-success">Save</button>
+                <button class="btn btn-secondary" @onclick="CancelEditCustomer">Cancel</button>
+            </EditForm>
+        }
+    </div>
+}
+else
+{
+    <div class="alert alert-danger">Access denied. Admin privileges required.</div>
+}
+
+@if(!string.IsNullOrEmpty(successMessage))
+{
+    <div class="alert alert-success">
+        <pre>@successMessage</pre>
+    </div>
+}
+
+@if(!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger">
+        <pre>@errorMessage</pre>
+    </div>
+}
+
+@code {
+    private Product product = new();
+    private Customer? editingCustomer;
+    private List<Product> products = new();
+    private List<Customer> customers = new();
+    private string? successMessage;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAdminData();
+    }
+
+    private async Task LoadAdminData()
+    {
+        if(!AuthService.IsAdmin)
+        {
+            errorMessage = "Access denied. Admin privileges required.";
+            return;
+        }
+
+        products = await Http.GetFromJsonAsync<List<Product>>("https://localhost:7262/api/admin/products") ?? new List<Product>();
+        customers = await Http.GetFromJsonAsync<List<Customer>>("https://localhost:7262/api/admin/customers") ?? new List<Customer>();
+    }
+
+    private async Task HandleProductSubmit()
+    {
+        var response = await Http.PostAsJsonAsync("https://localhost:7262/api/admin/products", product);
+        if(response.IsSuccessStatusCode)
+        {
+            successMessage = "Product added successfully!";
+            product = new Product();
+            await LoadAdminData();
+        }
+        else
+        {
+            errorMessage = "Failed to add product.";
+        }
+    }
+
+    private async Task RemoveProduct(Product productToRemove)
+    {
+        var response = await Http.DeleteAsync($"https://localhost:7262/api/admin/products/{productToRemove.ProductId}");
+        if(response.IsSuccessStatusCode)
+        {
+            successMessage = "Product removed successfully!";
+            await LoadAdminData();
+        }
+        else
+        {
+            errorMessage = "Failed to remove product.";
+        }
+    }
+
+    private async Task ToggleProduct(Product productToToggle)
+    {
+        var response = await Http.PutAsJsonAsync("https://localhost:7262/api/admin/products/toggle", productToToggle);
+        if(response.IsSuccessStatusCode)
+        {
+            successMessage = "Product status updated!";
+            await LoadAdminData();
+        }
+        else
+        {
+            errorMessage = "Failed to update product.";
+        }
+    }
+
+    private async Task SaveProduct(Product productToSave)
+    {
+        var response = await Http.PutAsJsonAsync($"https://localhost:7262/api/admin/products/{productToSave.ProductId}", productToSave);
+        if(response.IsSuccessStatusCode)
+        {
+            successMessage = "Product updated successfully!";
+            await LoadAdminData();
+        }
+        else
+        {
+            errorMessage = "Failed to update product.";
+        }
+    }
+
+    private async Task CancelEditProduct(Product productToCancel)
+    {
+        productToCancel.IsEditing = false;
+        await LoadAdminData();
+    }
+
+    private async Task SaveCustomer()
+    {
+        var response = await Http.PutAsJsonAsync($"https://localhost:7262/api/admin/customers/{editingCustomer.Id}", editingCustomer);
+        if(response.IsSuccessStatusCode)
+        {
+            successMessage = "Customer updated successfully!";
+            editingCustomer = null;
+            await LoadAdminData();
+        }
+        else
+        {
+            errorMessage = "Failed to update customer.";
+        }
+    }
+
+    private async Task RemoveCustomer(Customer customerToRemove)
+    {
+        await Http.DeleteAsync($"https://localhost:7262/api/admin/customers/{customerToRemove.Id}");
+        successMessage = "Customer removed successfully!";
+        await LoadAdminData();
+    }
+
+    private async Task CancelEditCustomer()
+    {
+        editingCustomer = null;
+        await LoadAdminData();
+    }
+}

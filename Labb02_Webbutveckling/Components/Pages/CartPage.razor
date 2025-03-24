@@ -1,0 +1,97 @@
+﻿@page "/cartpage"
+@inject HttpClient Http
+@inject AuthService AuthService
+@rendermode InteractiveServer
+
+@if(AuthService.IsLoggedIn && shoppingCart?.ShoppingCartProducts?.Any() == true)
+{
+    <div class="cart-container">
+        <h4>Shopping Cart</h4>
+        <ul>
+            @foreach(var cartProduct in shoppingCart.ShoppingCartProducts)
+            {
+                <li>
+                    <div class="cart-item">
+                        <span>@cartProduct.Product?.Name - $@cartProduct.Product?.Price x @cartProduct.Quantity</span>
+                        <button class="btn btn-danger btn-sm" @onclick="@(() => RemoveItemFromCart(cartProduct.ProductId))">Remove</button>
+                    </div>
+                </li>
+            }
+        </ul>
+        <p>Total Cost: $@CalculateTotalCost()</p>
+    </div>
+}
+else if(AuthService.IsLoggedIn)
+{
+    <p>Your cart is empty.</p>
+}
+else
+{
+    <p>Please log in to view your shopping cart.</p>
+}
+
+@if(!string.IsNullOrEmpty(successMessage))
+{
+    <div class="alert alert-success mt-3">
+        <pre>@successMessage</pre>
+    </div>
+}
+
+@if(!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger mt-3">
+        <pre>@errorMessage</pre>
+    </div>
+}
+
+@code {
+    private ShoppingCart? shoppingCart;
+    private string? successMessage;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if(AuthService.IsLoggedIn)
+        {
+            await LoadShoppingCart();
+        }
+    }
+
+    private async Task LoadShoppingCart()
+    {
+        var response = await Http.GetAsync($"https://localhost:7262/api/shoppingcart/{AuthService.UserId}");
+
+        if(response.IsSuccessStatusCode)
+        {
+            var cart = await response.Content.ReadFromJsonAsync<ShoppingCart>();
+
+            shoppingCart = cart ?? new ShoppingCart { ShoppingCartProducts = new List<ShoppingCartProduct>() };
+        }
+        else
+        {
+            errorMessage = "Failed to load shopping cart.";
+        }
+    }
+
+    private async Task RemoveItemFromCart(int productId)
+    {
+        var response = await Http.DeleteAsync($"https://localhost:7262/api/shoppingcart/remove/{shoppingCart.Id}/{productId}");
+
+        if(response.IsSuccessStatusCode)
+        {
+            successMessage = "Item removed from cart!";
+            await LoadShoppingCart();
+        }
+        else
+        {
+            errorMessage = "Failed to remove item.";
+        }
+    }
+
+    private decimal CalculateTotalCost()
+    {
+        return shoppingCart?.ShoppingCartProducts?
+            .Where(p => p.Product != null)
+            .Sum(p => p.Product.Price * p.Quantity) ?? 0;
+    }
+}

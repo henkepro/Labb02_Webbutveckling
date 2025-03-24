@@ -1,0 +1,146 @@
+﻿@page "/loginpage"
+@inject HttpClient Http
+@inject AuthService AuthService
+@rendermode InteractiveServer
+
+@if(!AuthService.IsLoggedIn)
+{
+    <EditForm Model="@loginModel" OnSubmit="HandleLoginSubmit" FormName="Product">
+        <DataAnnotationsValidator />
+        <div class="login-container">
+            <div>
+                <label>Email:</label>
+                <InputText @bind-Value="loginModel.Email" class="form-control" />
+                <ValidationMessage For="@(() => loginModel.Email)" />
+            </div>
+
+            <div>
+                <label>Password:</label>
+                <InputText @bind-Value="loginModel.Password" type="password" class="form-control" />
+                <ValidationMessage For="@(() => loginModel.Password)" />
+            </div>
+
+            <button type="submit" class="btn btn-primary">Login</button>
+        </div>
+    </EditForm>
+}
+else
+{
+    <div class="logged-in-container">
+        @if(!isEditing)
+        {
+            <p>Firstname: @AuthService.LoggedInUser?.FirstName</p>
+            <p>Lastname: @AuthService.LoggedInUser?.LastName</p>
+            <p>Phonenumber: @AuthService.LoggedInUser?.PhoneNumber</p>
+            <p>Email: @AuthService.LoggedInUser?.Email</p>
+            <p>Adress: @AuthService.LoggedInUser?.Adress</p>
+            <p>Password: *********</p>
+
+            <button class="btn btn-warning" @onclick="() => isEditing = true">Modify</button>
+            <button class="btn btn-danger" @onclick="HandleLogout">Logout</button>
+        }
+        else
+        {
+            <EditForm Model="@AuthService.LoggedInUser" OnSubmit="SaveChanges" FormName="Product">
+                <DataAnnotationsValidator />
+                <div>
+                    <label>Firstname:</label>
+                    <InputText @bind-Value="AuthService.LoggedInUser.FirstName" class="form-control" />
+                </div>
+
+                <div>
+                    <label>Lastname:</label>
+                    <InputText @bind-Value="AuthService.LoggedInUser.LastName" class="form-control" />
+                </div>
+
+                <div>
+                    <label>Phonenumber:</label>
+                    <InputText @bind-Value="AuthService.LoggedInUser.PhoneNumber" class="form-control" />
+                </div>
+
+                <div>
+                    <label>Email:</label>
+                    <InputText @bind-Value="AuthService.LoggedInUser.Email" class="form-control" />
+                </div>
+                <div>
+                    <label>Adress:</label>
+                    <InputText @bind-Value="AuthService.LoggedInUser.Adress" class="form-control" />
+                </div>
+
+                <div>
+                    <label>Password:</label>
+                    <InputText @bind-Value="AuthService.LoggedInUser.Password" class="form-control" />
+                </div>
+
+                <button type="submit" class="btn btn-success">Save</button>
+                <button type="button" class="btn btn-secondary" @onclick="() => isEditing = false">Cancel</button>
+            </EditForm>
+        }
+    </div>
+}
+
+<div>
+    <h4> Admin : </h4>
+    <p> Email: Admin </p>
+    <p> Password: Admin </p>
+</div>
+
+@if(!string.IsNullOrEmpty(successMessage))
+{
+    <div class="alert alert-success mt-3">
+        <pre>@successMessage</pre>
+    </div>
+}
+
+@if(!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger mt-3">
+        <pre>@errorMessage</pre>
+    </div>
+}
+
+@code {
+    private string? successMessage;
+    private string? errorMessage;
+    private LoginModel loginModel = new();
+    private bool isEditing = false;
+
+    private async Task HandleLoginSubmit()
+    {
+        bool loginSuccess = await AuthService.Login(loginModel.Email, loginModel.Password);
+        if(loginSuccess)
+        {
+            successMessage = "Login successful!";
+            errorMessage = null;
+            loginModel = new LoginModel();
+            StateHasChanged();
+        }
+        else
+        {
+            errorMessage = "Invalid email or password.";
+        }
+    }
+
+    private async Task HandleLogout()
+    {
+        await AuthService.Logout();
+        successMessage = "Logged out successfully!";
+        errorMessage = null;
+        isEditing = false;
+        StateHasChanged();
+    }
+
+    private async Task SaveChanges()
+    {
+        var updateSuccess = await AuthService.UpdateUser();
+        if(updateSuccess)
+        {
+            successMessage = "Profile updated successfully!";
+            isEditing = false;
+        }
+        else
+        {
+            errorMessage = "Failed to update profile.";
+        }
+    }
+}

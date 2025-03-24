@@ -1,0 +1,108 @@
+﻿@page "/productpage"
+@inject HttpClient Http
+@inject AuthService AuthService
+@rendermode InteractiveServer
+
+<h3>Available Products</h3>
+@if(products?.Any() == true)
+{
+    <div class="parentcolumnPanel">
+        @foreach(var category in products.Select(p => p.Category).Distinct())
+        {
+            <div class="category-section commonMargin">
+                <h3 class="category-title">@category</h3>
+
+                <ul class="category-list">
+                    @foreach(var item in products.Where(p => p.Category == category))
+                    {
+                        <li class="product-item">
+                            <div class="parentRowAlignedDiv">
+                                @if(!item.IsAvailable || item.Quantity < 1)
+                                {
+                                    <span class="commonMargin">@item.Name - $@item.Price - @item.Quantity - @item.Description - Out Of Stock</span>
+                                }
+                                else
+                                {
+                                    <span class="commonMargin" style="width: 200px;">
+                                        @item.Name - $@item.Price - @item.Quantity - @item.Description
+                                    </span>
+
+                                    @if(AuthService.IsLoggedIn)
+                                    {
+                                        <div class="parentRowAlignedDiv">
+                                            <button class="btn btn-danger btn-sm commonMargin"
+                                                    @onclick="() => AddToCart(item)">
+                                                Add to Cart
+                                            </button>
+                                        </div>
+                                    }
+                                }
+                            </div>
+                        </li>
+                    }
+                </ul>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <p>No products available.</p>
+}
+
+@if(!string.IsNullOrEmpty(successMessage))
+{
+    <div class="alert alert-success mt-3">
+        <pre>@successMessage</pre>
+    </div>
+}
+
+@if(!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger mt-3">
+        <pre>@errorMessage</pre>
+    </div>
+}
+
+@code {
+    private List<Product> products = new();
+    private string? successMessage;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProductsAsync();
+    }
+
+    private async Task LoadProductsAsync()
+    {
+        products = await Http.GetFromJsonAsync<List<Product>>("https://localhost:7262/api/products") ?? new List<Product>();
+    }
+
+    private async Task AddToCart(Product product)
+    {
+        if(!AuthService.IsLoggedIn)
+        {
+            errorMessage = "You must be logged in to add items to your cart.";
+            return;
+        }
+
+        var cartItem = new ShoppingCartProductModel
+            {
+                ShoppingCartId = AuthService.UserCart.Id,
+                ProductId = product.ProductId,
+                Quantity = product.Quantity
+            };
+
+        var response = await Http.PostAsJsonAsync("https://localhost:7262/api/shoppingcart/add", cartItem);
+
+        if(response.IsSuccessStatusCode)
+        {
+            successMessage = $"{product.Name} added to cart!";
+        }
+        else
+        {
+            errorMessage = "Failed to add product.";
+        }
+    }
+}

@@ -1,0 +1,55 @@
+﻿.commonMargin {
+    margin: 5px;
+}
+
+.product-form {
+    width: 200px;
+}
+
+.commonstyleWidth {
+    width: 350px;
+}
+.commonformWidth {
+    width: 70px;
+    height: 30px;
+    white-space: nowrap;
+}
+
+.cartItemWidth {
+    width: 200px;
+}
+.parentRowAlignedDiv {
+    display: flex;
+    flex-direction: row !important;
+    background-color: #e3e1e1;
+    width: 100%;
+    align-items: center;
+}
+.simpleSingleRow {
+    display: flex;
+    flex-direction: row !important;
+    background-color: #e3e1e1;
+    width: 100%;
+}
+.rowAlignedDiv {
+    display: flex;
+    flex-direction: row !important;
+    background-color: #e3e1e1;
+    width: 100%;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.parentstackPanel {
+    display: flex;
+    flex-direction: row !important;
+    background-color: #e3e1e1;
+    margin: 10px;
+}
+
+.parentcolumnPanel {
+    display: flex;
+    flex-direction: column !important;
+    background-color: #e3e1e1;
+    margin: 10px;
+}

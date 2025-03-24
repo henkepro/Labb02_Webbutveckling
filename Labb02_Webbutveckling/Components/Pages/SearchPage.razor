@@ -1,0 +1,150 @@
+﻿@page "/searchpage"
+@inject HttpClient Http
+@rendermode InteractiveServer
+
+<h3>Search</h3>
+
+<div class="input-group mb-3">
+    <input type="text" @bind="searchQuery" class="form-control" placeholder="Enter product name..." />
+    <button class="btn btn-primary" @onclick="SearchProductsByName">Search</button>
+</div>
+
+<div class="input-group mb-3">
+    <input type="text" @bind="searchId" class="form-control" placeholder="Enter product id..." />
+    <button class="btn btn-primary" @onclick="SearchProductsById">Search</button>
+</div>
+
+<div class="input-group mb-3">
+    <input type="text" @bind="searchEmail" class="form-control" placeholder="Enter email..." />
+    <button class="btn btn-secondary" @onclick="SearchCustomersByEmail">Search</button>
+</div>
+
+@if(isSearching)
+{
+    <p>Searching...</p>
+}
+
+@if(searchResults.Count > 0)
+{
+    <h4>Products:</h4>
+    <ul>
+        @foreach(var product in searchResults)
+        {
+            <li>@product.Name - $@product.Price</li>
+        }
+    </ul>
+}
+
+@if(isFound)
+{
+    <h4>Product:</h4>
+    <ul>
+        <li>@searchIdResult.Name - @searchIdResult.Price</li>
+    </ul>
+}
+
+@if(customerResults.Count > 0)
+{
+    <h4>Customers:</h4>
+    <ul>
+        @foreach(var customer in customerResults)
+        {
+            <li>@customer.FirstName @customer.LastName - @customer.Email - @customer.Adress - @customer.PhoneNumber</li>
+        }
+    </ul>
+}
+
+@if(!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger mt-3">
+        <pre>@errorMessage</pre>
+    </div>
+}
+
+@code {
+    private string searchQuery = "";
+    private string searchId = "";
+    private string searchEmail = "";
+    private List<Product> searchResults = new();
+    private Product searchIdResult = new();
+    private List<Customer> customerResults = new();
+    private bool isSearching = false;
+    private bool isFound = false;
+    private string? errorMessage;
+
+    private async Task SearchProductsByName()
+    {
+        if(string.IsNullOrWhiteSpace(searchQuery))
+        {
+            searchResults.Clear();
+            errorMessage = "Invalid query";
+            return;
+        }
+        isFound = false;
+        isSearching = true;
+        errorMessage = null;
+
+        var encodedQuery = Uri.EscapeDataString(searchQuery);
+        var response = await Http.GetFromJsonAsync<List<Product>>($"https://localhost:7262/api/search/product?product={encodedQuery}");
+        searchResults = response ?? new List<Product>();
+        isSearching = false;
+
+        customerResults = new();
+    }
+
+    private async Task SearchProductsById()
+    {
+        searchId = searchId.Trim();
+
+        if(string.IsNullOrWhiteSpace(searchId) || !int.TryParse(searchId, out int productId))
+        {
+            searchIdResult = new Product();
+            errorMessage = "Invalid query";
+            return;
+        }
+
+        isSearching = true;
+        errorMessage = null;
+
+        var response = await Http.GetAsync($"https://localhost:7262/api/search/{productId}");
+
+        if(response.IsSuccessStatusCode)
+        {
+            searchIdResult = await response.Content.ReadFromJsonAsync<Product>();
+            isFound = true;
+        }
+        else
+        {
+            searchIdResult = new();
+            isFound = false;
+            errorMessage = "Invalid product number";
+        }
+
+        customerResults = new();
+        searchResults = new();
+        isSearching = false;
+    }
+
+
+
+    private async Task SearchCustomersByEmail()
+    {
+        if(string.IsNullOrWhiteSpace(searchEmail))
+        {
+            customerResults.Clear();
+            errorMessage = "Invalid query";
+            return;
+        }
+
+        isFound = false;
+        isSearching = true;
+        errorMessage = null;
+
+        var encodedEmail = Uri.EscapeDataString(searchEmail);
+        var response = await Http.GetFromJsonAsync<List<Customer>>($"https://localhost:7262/api/search/email?email={encodedEmail}");
+        customerResults = response ?? new List<Customer>();
+        isSearching = false;
+
+        searchResults = new();
+    }
+}

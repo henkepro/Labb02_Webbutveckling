@@ -1,0 +1,71 @@
+﻿@page "/register"
+@inject HttpClient Http
+@rendermode InteractiveServer
+
+<h3>Register New Account</h3>
+
+<EditForm Model="@newCustomer" OnValidSubmit="RegisterCustomer" FormName="ProductForm">
+    <DataAnnotationsValidator />
+
+    <div>
+        <label>First Name:</label>
+        <InputText @bind-Value="newCustomer.FirstName" class="form-control" required />
+    </div>
+    <div>
+        <label>Last Name:</label>
+        <InputText @bind-Value="newCustomer.LastName" class="form-control" required />
+    </div>
+    <div>
+        <label>Email:</label>
+        <InputText @bind-Value="newCustomer.Email" class="form-control" required />
+    </div>
+    <div>
+        <label>Adress:</label>
+        <InputText @bind-Value="newCustomer.Adress" class="form-control" required />
+    </div>
+    <div>
+        <label>Password:</label>
+        <InputText @bind-Value="newCustomer.Password" class="form-control" type="password" required />
+    </div>
+    <div>
+        <label>Phone Number:</label>
+        <InputText @bind-Value="newCustomer.PhoneNumber" class="form-control" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Register</button>
+</EditForm>
+
+@if(!string.IsNullOrEmpty(successMessage))
+{
+    <div class="alert alert-success mt-3">
+        <pre>@successMessage</pre>
+    </div>
+}
+
+@if(!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger mt-3">
+        <pre>@errorMessage</pre>
+    </div>
+}
+
+@code {
+    private Customer newCustomer = new();
+    private string? successMessage;
+    private string? errorMessage;
+
+    private async Task RegisterCustomer()
+    {
+        var response = await Http.PostAsJsonAsync("https://localhost:7262/api/customers/register", newCustomer);
+        if(response.IsSuccessStatusCode)
+        {
+            successMessage = "Registration successful!";
+            errorMessage = null;
+            newCustomer = new Customer();
+        }
+        else
+        {
+            errorMessage = $"Registration failed: {response.StatusCode}";
+        }
+    }
+}
