@@ -9,13 +9,13 @@
     <div class="parentcolumnPanel">
         @foreach(var category in products.Select(p => p.Category).Distinct())
         {
-            <div class="category-section commonMargin">
-                <h3 class="category-title">@category</h3>
+            <div>
+                <h3>@category</h3>
 
-                <ul class="category-list">
+                <ul>
                     @foreach(var item in products.Where(p => p.Category == category))
                     {
-                        <li class="product-item">
+                        <li>
                             <div class="parentRowAlignedDiv">
                                 @if(!item.IsAvailable || item.Quantity < 1)
                                 {
@@ -76,7 +76,7 @@ else
 
     private async Task LoadProductsAsync()
     {
-        products = await Http.GetFromJsonAsync<List<Product>>("https://localhost:7262/api/products") ?? new List<Product>();
+        products = await Http.GetFromJsonAsync<List<Product>>("https://localhost:7262/api/fetch/products") ?? new List<Product>();
     }
 
     private async Task AddToCart(Product product)
@@ -94,7 +94,7 @@ else
                 Quantity = product.Quantity
             };
 
-        var response = await Http.PostAsJsonAsync("https://localhost:7262/api/shoppingcart/add", cartItem);
+        var response = await Http.PostAsJsonAsync("https://localhost:7262/api/add/shoppingcart", cartItem);
 
         if(response.IsSuccessStatusCode)
         {

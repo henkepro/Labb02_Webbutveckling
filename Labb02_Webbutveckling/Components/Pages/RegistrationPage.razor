@@ -56,7 +56,7 @@
 
     private async Task RegisterCustomer()
     {
-        var response = await Http.PostAsJsonAsync("https://localhost:7262/api/customers/register", newCustomer);
+        var response = await Http.PostAsJsonAsync("https://localhost:7262/api/add/customer", newCustomer);
         if(response.IsSuccessStatusCode)
         {
             successMessage = "Registration successful!";

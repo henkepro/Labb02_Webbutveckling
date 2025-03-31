@@ -5,13 +5,13 @@
 
 @if(AuthService.IsLoggedIn && shoppingCart?.ShoppingCartProducts?.Any() == true)
 {
-    <div class="cart-container">
+    <div>
         <h4>Shopping Cart</h4>
         <ul>
             @foreach(var cartProduct in shoppingCart.ShoppingCartProducts)
             {
                 <li>
-                    <div class="cart-item">
+                    <div>
                         <span>@cartProduct.Product?.Name - $@cartProduct.Product?.Price x @cartProduct.Quantity</span>
                         <button class="btn btn-danger btn-sm" @onclick="@(() => RemoveItemFromCart(cartProduct.ProductId))">Remove</button>
                     </div>
@@ -59,7 +59,7 @@ else
 
     private async Task LoadShoppingCart()
     {
-        var response = await Http.GetAsync($"https://localhost:7262/api/shoppingcart/{AuthService.UserId}");
+        var response = await Http.GetAsync($"https://localhost:7262/api/fetch/shoppingcart/{AuthService.UserId}");
 
         if(response.IsSuccessStatusCode)
         {
@@ -75,7 +75,7 @@ else
 
     private async Task RemoveItemFromCart(int productId)
     {
-        var response = await Http.DeleteAsync($"https://localhost:7262/api/shoppingcart/remove/{shoppingCart.Id}/{productId}");
+        var response = await Http.DeleteAsync($"https://localhost:7262/api/remove/shoppingcart/{shoppingCart.Id}/{productId}");
 
         if(response.IsSuccessStatusCode)
         {

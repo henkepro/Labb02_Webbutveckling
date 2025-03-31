@@ -7,7 +7,7 @@
 {
     <EditForm Model="@loginModel" OnSubmit="HandleLoginSubmit" FormName="Product">
         <DataAnnotationsValidator />
-        <div class="login-container">
+        <div>
             <div>
                 <label>Email:</label>
                 <InputText @bind-Value="loginModel.Email" class="form-control" />
@@ -26,8 +26,8 @@
 }
 else
 {
-    <div class="logged-in-container">
-        @if(!isEditing)
+    <div>
+        @if(editingCustomer == null)
         {
             <p>Firstname: @AuthService.LoggedInUser?.FirstName</p>
             <p>Lastname: @AuthService.LoggedInUser?.LastName</p>
@@ -36,44 +36,39 @@ else
             <p>Adress: @AuthService.LoggedInUser?.Adress</p>
             <p>Password: *********</p>
 
-            <button class="btn btn-warning" @onclick="() => isEditing = true">Modify</button>
+            <button class="btn btn-warning" @onclick="() => startEditing()">Modify</button>
             <button class="btn btn-danger" @onclick="HandleLogout">Logout</button>
         }
         else
         {
-            <EditForm Model="@AuthService.LoggedInUser" OnSubmit="SaveChanges" FormName="Product">
-                <DataAnnotationsValidator />
+            <h3>Edit Customer</h3>
+            <EditForm Model="@editingCustomer" OnValidSubmit="UpdateCustomer" FormName="Product">
                 <div>
-                    <label>Firstname:</label>
-                    <InputText @bind-Value="AuthService.LoggedInUser.FirstName" class="form-control" />
+                    <label>First Name:</label>
+                    <InputText @bind-Value="editingCustomer.FirstName" class="form-control" />
                 </div>
-
                 <div>
-                    <label>Lastname:</label>
-                    <InputText @bind-Value="AuthService.LoggedInUser.LastName" class="form-control" />
+                    <label>Last Name:</label>
+                    <InputText @bind-Value="editingCustomer.LastName" class="form-control" />
                 </div>
-
-                <div>
-                    <label>Phonenumber:</label>
-                    <InputText @bind-Value="AuthService.LoggedInUser.PhoneNumber" class="form-control" />
-                </div>
-
                 <div>
                     <label>Email:</label>
-                    <InputText @bind-Value="AuthService.LoggedInUser.Email" class="form-control" />
+                    <InputText @bind-Value="editingCustomer.Email" class="form-control" />
+                </div>
+                <div>
+                    <label>Phone Number:</label>
+                    <InputText @bind-Value="editingCustomer.PhoneNumber" class="form-control" />
                 </div>
                 <div>
                     <label>Adress:</label>
-                    <InputText @bind-Value="AuthService.LoggedInUser.Adress" class="form-control" />
+                    <InputText @bind-Value="editingCustomer.Adress" class="form-control" />
                 </div>
-
                 <div>
                     <label>Password:</label>
-                    <InputText @bind-Value="AuthService.LoggedInUser.Password" class="form-control" />
+                    <InputText @bind-Value="editingCustomer.Password" class="form-control" />
                 </div>
-
                 <button type="submit" class="btn btn-success">Save</button>
-                <button type="button" class="btn btn-secondary" @onclick="() => isEditing = false">Cancel</button>
+                <button class="btn btn-secondary" @onclick="CancelEditCustomer">Cancel</button>
             </EditForm>
         }
     </div>
@@ -104,6 +99,8 @@ else
     private string? errorMessage;
     private LoginModel loginModel = new();
     private bool isEditing = false;
+    private Customer? editingCustomer;
+
 
     private async Task HandleLoginSubmit()
     {
@@ -113,7 +110,6 @@ else
             successMessage = "Login successful!";
             errorMessage = null;
             loginModel = new LoginModel();
-            StateHasChanged();
         }
         else
         {
@@ -127,20 +123,29 @@ else
         successMessage = "Logged out successfully!";
         errorMessage = null;
         isEditing = false;
-        StateHasChanged();
     }
 
-    private async Task SaveChanges()
+    private async Task UpdateCustomer()
     {
-        var updateSuccess = await AuthService.UpdateUser();
-        if(updateSuccess)
+        var response = await Http.PutAsJsonAsync($"https://localhost:7262/api/update/customer/{editingCustomer.Id}", editingCustomer);
+        if(response.IsSuccessStatusCode)
         {
-            successMessage = "Profile updated successfully!";
-            isEditing = false;
+            successMessage = "Customer updated successfully!";
+            editingCustomer = null;
         }
         else
         {
-            errorMessage = "Failed to update profile.";
+            errorMessage = "Failed to update customer.";
         }
+    }
+    private void CancelEditCustomer()
+    {
+        isEditing = false;
+        editingCustomer = null;
+    }
+    private void startEditing()
+    {
+        isEditing = true;
+        editingCustomer = AuthService.LoggedInUser;
     }
 }

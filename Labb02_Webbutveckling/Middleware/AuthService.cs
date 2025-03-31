@@ -45,25 +45,11 @@ public class AuthService
         return true;
     }
 
-    public async Task<bool> UpdateUser()
-    {
-        if(!IsLoggedIn) return false;
-
-        var response = await _httpClient.PutAsJsonAsync($"https://localhost:7262/api/customers/update/{UserId}", LoggedInUser);
-        if(!response.IsSuccessStatusCode) return false;
-
-        LoggedInUser = await response.Content.ReadFromJsonAsync<Customer>();
-
-        if(LoggedInUser == null) return false;
-
-        return true;
-    }
-
     private async Task LoadUserCart()
     {
         if(!IsLoggedIn) return;
 
-        var response = await _httpClient.GetAsync($"https://localhost:7262/api/shoppingcart/{UserId}");
+        var response = await _httpClient.GetAsync($"https://localhost:7262/api/fetch/shoppingcart/{UserId}");
 
         if(response.IsSuccessStatusCode)
         {
@@ -77,7 +63,7 @@ public class AuthService
 
     private async Task<ShoppingCart> CreateNewCart()
     {
-        var response = await _httpClient.PostAsJsonAsync("https://localhost:7262/api/shoppingcart/create", new ShoppingCart
+        var response = await _httpClient.PostAsJsonAsync("https://localhost:7262/api/add/shoppingcart/create", new ShoppingCart
         {
             CustomerId = UserId,
             ShoppingCartProducts = new List<ShoppingCartProduct>()

@@ -1,38 +1,20 @@
 ﻿namespace Labb02_Webbutveckling.Controllers;
-
 using Labb02_Webbutveckling.Model;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
+
 [ApiController]
-[Route("api/admin/customers")]
-public class AdminCustomerController : ControllerBase
+[Route("api/update")]
+public class UpdateController : ControllerBase
 {
     private readonly MyContext _dbContext;
 
-    public AdminCustomerController(MyContext dbContext)
+    public UpdateController(MyContext dbContext)
     {
         _dbContext = dbContext;
     }
-
-    [HttpGet]
-    public async Task<IActionResult> GetCustomers()
-    {
-        return Ok(await _dbContext.Customers.ToListAsync());
-    }
-
-    [HttpGet("{id}")]
-    public async Task<IActionResult> GetCustomerById(int id)
-    {
-        var customer = await _dbContext.Customers.FindAsync(id);
-        if(customer == null)
-            return NotFound();
-
-        return Ok(customer);
-    }
-
-
-    [HttpPut("{id}")]
+    [HttpPut("customer/{id}")]
     public async Task<IActionResult> UpdateCustomer(int id, [FromBody] Customer updatedCustomer)
     {
         if(updatedCustomer == null) return BadRequest();
@@ -49,15 +31,19 @@ public class AdminCustomerController : ControllerBase
         return Ok(customer);
     }
 
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteCustomer(int id)
+    [HttpPut("product/{id}")]
+    public async Task<IActionResult> UpdateProduct(int id, [FromBody] Product updatedProduct)
     {
-        var customer = await _dbContext.Customers.FindAsync(id);
-        if(customer == null) return NotFound();
+        var product = await _dbContext.Products.FindAsync(id);
+        if(product == null) return NotFound();
 
-        _dbContext.Customers.Remove(customer);
+        product.Name = updatedProduct.Name;
+        product.Price = updatedProduct.Price;
+        product.Quantity = updatedProduct.Quantity;
+        product.Description = updatedProduct.Description;
+        product.Category = updatedProduct.Category;
+
         await _dbContext.SaveChangesAsync();
-
-        return Ok(customer);
+        return Ok(product);
     }
 }

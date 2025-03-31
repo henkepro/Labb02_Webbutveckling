@@ -6,17 +6,38 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 [ApiController]
-[Route("api/shoppingcart")]
-public class ShoppingCartController : ControllerBase
+[Route("api/add")]
+public class AddController : ControllerBase
 {
     private readonly MyContext _dbContext;
 
-    public ShoppingCartController(MyContext dbContext)
+    public AddController(MyContext dbContext)
     {
         _dbContext = dbContext;
     }
 
-    [HttpPost("add")]
+    [HttpPost("product")]
+    public async Task<IActionResult> AddProduct([FromBody] Product newProduct)
+    {
+        if(newProduct == null) return BadRequest();
+
+        _dbContext.Products.Add(newProduct);
+        await _dbContext.SaveChangesAsync();
+
+        return Ok(newProduct);
+    }
+    [HttpPost("customer")]
+    public async Task<IActionResult> AddCustomer([FromBody] Customer customer)
+    {
+        if(customer == null) return BadRequest();
+
+        _dbContext.Customers.Add(customer);
+        await _dbContext.SaveChangesAsync();
+
+        return Ok();
+    }
+
+    [HttpPost("shoppingcart")]
     public async Task<IActionResult> AddToCart([FromBody] ShoppingCartProductModel cartItem)
     {
         var shoppingCart = await _dbContext.ShoppingCarts
@@ -49,47 +70,13 @@ public class ShoppingCartController : ControllerBase
         await _dbContext.SaveChangesAsync();
         return Ok();
     }
-    [HttpPost("create")]
-    public async Task<IActionResult> CreateCart([FromBody] ShoppingCart cart)
+
+    [HttpPost("shoppingcart/create")]
+    public async Task<IActionResult> AddCart([FromBody] ShoppingCart cart)
     {
         _dbContext.ShoppingCarts.Add(cart);
         await _dbContext.SaveChangesAsync();
 
         return Ok(cart);
     }
-
-    [HttpGet("{customerId}")]
-    public async Task<IActionResult> GetCart(int customerId)
-    {
-        var shoppingCart = await _dbContext.ShoppingCarts
-            .Include(sc => sc.ShoppingCartProducts)
-            .ThenInclude(sp => sp.Product)
-            .FirstOrDefaultAsync(sc => sc.CustomerId == customerId);
-
-        if(shoppingCart == null)
-        {
-            shoppingCart = new ShoppingCart
-            {
-                CustomerId = customerId,
-                ShoppingCartProducts = new List<ShoppingCartProduct>()
-            };
-
-            await _dbContext.ShoppingCarts.AddAsync(shoppingCart);
-            await _dbContext.SaveChangesAsync();
-        }
-
-        return Ok(shoppingCart);
-    }
-
-    [HttpDelete("remove/{cartId}/{productId}")]
-    public async Task<IActionResult> RemoveFromCart(int cartId, int productId)
-    {
-        var cartItem = await _dbContext.ShoppingCartProducts
-            .FirstOrDefaultAsync(cp => cp.ShoppingCartId == cartId && cp.ProductId == productId);
-
-        _dbContext.ShoppingCartProducts.Remove(cartItem);
-        await _dbContext.SaveChangesAsync();
-        return Ok();
-    }
-
 }

@@ -5,7 +5,7 @@
 
 @if(AuthService.IsAdmin)
 {
-    <div class="admin-container">
+    <div>
         <h3>Add New Product</h3>
         <EditForm Model="@product" OnValidSubmit="HandleProductSubmit" FormName="Product">
             <DataAnnotationsValidator />
@@ -51,9 +51,13 @@
                                     <InputText @bind-Value="item.Name" class="form-control" />
                                     <InputNumber @bind-Value="item.Price" class="form-control" />
                                     <InputNumber @bind-Value="item.Quantity" class="form-control" />
-                                    <InputNumber @bind-Value="item.Description" class="form-control" />
-                                    <InputNumber @bind-Value="item.Category" class="form-control" />
-                                    <button class="btn btn-success" @onclick="() => SaveProduct(item)">Save</button>
+                                    <InputText @bind-Value="item.Description" class="form-control" />
+                                    <InputSelect @bind-Value="item.Category" class="form-control">
+                                        <option value="Fruits">Fruits</option>
+                                        <option value="Snacks">Snacks</option>
+                                        <option value="Drinks">Drinks</option>
+                                    </InputSelect>
+                                    <button class="btn btn-success" @onclick="() => UpdateProduct(item)">Update</button>
                                     <button class="btn btn-secondary" @onclick="() => CancelEditProduct(item)">Cancel</button>
                                 }
                                 else
@@ -85,7 +89,7 @@
         @if(editingCustomer != null)
         {
             <h3>Edit Customer</h3>
-            <EditForm Model="@editingCustomer" OnValidSubmit="SaveCustomer" FormName="Product">
+            <EditForm Model="@editingCustomer" OnValidSubmit="UpdateCustomer" FormName="Product">
                 <div>
                     <label>First Name:</label>
                     <InputText @bind-Value="editingCustomer.FirstName" class="form-control" />
@@ -115,10 +119,6 @@
             </EditForm>
         }
     </div>
-}
-else
-{
-    <div class="alert alert-danger">Access denied. Admin privileges required.</div>
 }
 
 @if(!string.IsNullOrEmpty(successMessage))
@@ -156,13 +156,13 @@ else
             return;
         }
 
-        products = await Http.GetFromJsonAsync<List<Product>>("https://localhost:7262/api/admin/products") ?? new List<Product>();
-        customers = await Http.GetFromJsonAsync<List<Customer>>("https://localhost:7262/api/admin/customers") ?? new List<Customer>();
+        products = await Http.GetFromJsonAsync<List<Product>>("https://localhost:7262/api/fetch/products") ?? new List<Product>();
+        customers = await Http.GetFromJsonAsync<List<Customer>>("https://localhost:7262/api/fetch/customers") ?? new List<Customer>();
     }
 
     private async Task HandleProductSubmit()
     {
-        var response = await Http.PostAsJsonAsync("https://localhost:7262/api/admin/products", product);
+        var response = await Http.PostAsJsonAsync("https://localhost:7262/api/add/product", product);
         if(response.IsSuccessStatusCode)
         {
             successMessage = "Product added successfully!";
@@ -177,7 +177,7 @@ else
 
     private async Task RemoveProduct(Product productToRemove)
     {
-        var response = await Http.DeleteAsync($"https://localhost:7262/api/admin/products/{productToRemove.ProductId}");
+        var response = await Http.DeleteAsync($"https://localhost:7262/api/remove/product/{productToRemove.ProductId}");
         if(response.IsSuccessStatusCode)
         {
             successMessage = "Product removed successfully!";
@@ -191,7 +191,7 @@ else
 
     private async Task ToggleProduct(Product productToToggle)
     {
-        var response = await Http.PutAsJsonAsync("https://localhost:7262/api/admin/products/toggle", productToToggle);
+        var response = await Http.PutAsJsonAsync("https://localhost:7262/api/toggle", productToToggle);
         if(response.IsSuccessStatusCode)
         {
             successMessage = "Product status updated!";
@@ -203,29 +203,17 @@ else
         }
     }
 
-    private async Task SaveProduct(Product productToSave)
-    {
-        var response = await Http.PutAsJsonAsync($"https://localhost:7262/api/admin/products/{productToSave.ProductId}", productToSave);
-        if(response.IsSuccessStatusCode)
-        {
-            successMessage = "Product updated successfully!";
-            await LoadAdminData();
-        }
-        else
-        {
-            errorMessage = "Failed to update product.";
-        }
-    }
 
-    private async Task CancelEditProduct(Product productToCancel)
+    private async Task RemoveCustomer(Customer customerToRemove)
     {
-        productToCancel.IsEditing = false;
+        await Http.DeleteAsync($"https://localhost:7262/api/remove/customer/{customerToRemove.Id}");
+        successMessage = "Customer removed successfully!";
         await LoadAdminData();
     }
 
-    private async Task SaveCustomer()
+    private async Task UpdateCustomer()
     {
-        var response = await Http.PutAsJsonAsync($"https://localhost:7262/api/admin/customers/{editingCustomer.Id}", editingCustomer);
+        var response = await Http.PutAsJsonAsync($"https://localhost:7262/api/update/customer/{editingCustomer.Id}", editingCustomer);
         if(response.IsSuccessStatusCode)
         {
             successMessage = "Customer updated successfully!";
@@ -237,17 +225,27 @@ else
             errorMessage = "Failed to update customer.";
         }
     }
-
-    private async Task RemoveCustomer(Customer customerToRemove)
+    private async Task UpdateProduct(Product productToSave)
     {
-        await Http.DeleteAsync($"https://localhost:7262/api/admin/customers/{customerToRemove.Id}");
-        successMessage = "Customer removed successfully!";
-        await LoadAdminData();
+        var response = await Http.PutAsJsonAsync($"https://localhost:7262/api/update/product/{productToSave.ProductId}", productToSave);
+        if(response.IsSuccessStatusCode)
+        {
+            successMessage = "Product updated successfully!";
+            await LoadAdminData();
+        }
+        else
+        {
+            errorMessage = "Failed to update product.";
+        }
     }
-
     private async Task CancelEditCustomer()
     {
         editingCustomer = null;
+        await LoadAdminData();
+    }
+    private async Task CancelEditProduct(Product productToCancel)
+    {
+        productToCancel.IsEditing = false;
         await LoadAdminData();
     }
 }
