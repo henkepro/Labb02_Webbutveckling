@@ -1,27 +1,31 @@
-﻿namespace Labb02_Webbutveckling.Controllers;
-using Labb02_Webbutveckling.Model;
-using Microsoft.AspNetCore.Mvc;
-
-[ApiController]
-[Route("api/toggle")]
-public class ToggleController : ControllerBase
+﻿namespace Labb02_Webbutveckling.Controllers
 {
-    private readonly MyContext _dbContext;
+    using Labb02_Webbutveckling.Model;
+    using Microsoft.AspNetCore.Mvc;
+    using Labb02_Webbutveckling.Repository;
 
-    public ToggleController(MyContext dbContext)
+    [ApiController]
+    [Route("api/toggle")]
+    public class ToggleController : ControllerBase
     {
-        _dbContext = dbContext;
-    }
+        private readonly IProductRepository _productRepository;
 
-    [HttpPut]
-    public async Task<IActionResult> ToggleProduct([FromBody] Product productToToggle)
-    {
-        var product = await _dbContext.Products.FindAsync(productToToggle.ProductId);
-        if(product == null) return NotFound();
+        public ToggleController(IProductRepository productRepository)
+        {
+            _productRepository = productRepository;
+        }
 
-        product.IsAvailable = !product.IsAvailable;
-        await _dbContext.SaveChangesAsync();
+        [HttpPut]
+        public async Task<IActionResult> ToggleProduct([FromBody] Product productToToggle)
+        {
+            if(productToToggle == null) return BadRequest();
 
-        return Ok(product);
+            var product = await _productRepository.GetProductByIdAsync(productToToggle.ProductId);
+            if(product == null) return NotFound();
+
+            await _productRepository.ToggleProductAvailabilityAsync(productToToggle.ProductId);
+
+            return Ok(product);
+        }
     }
 }

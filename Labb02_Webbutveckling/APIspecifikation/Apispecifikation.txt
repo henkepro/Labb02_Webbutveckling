@@ -1,0 +1,547 @@
+﻿Shopify-APP 
+Version 3.0.4 
+
+Detta API interagerar med backend tjänsten till en Shopify-APP. 
+
+-> AddController
+-- Lägga till ny produkt i databasen(SQL)
+- Request
+POST/api/add/product
+Body: 
+{
+  "productId": 0,
+  "name": "string",
+  "price": 0,
+  "quantity": 0,
+  "category": "string",
+  "description": "string",
+  "isEditing": true,
+  "isAvailable": true
+}
+
+- Response 
+200 
+{
+  "productId": 7,
+  "name": "string",
+  "price": 0,
+  "quantity": 0,
+  "category": "string",
+  "description": "string",
+  "isEditing": true,
+  "isAvailable": true
+}
+400
+{
+}
+
+-- Lägga till ny kund i databasen(SQL)
+- Request 
+POST/api/add/customer
+Body: 
+{
+  "id": 0,
+  "firstName": "string",
+  "lastName": "string",
+  "email": "string",
+  "phoneNumber": "string",
+  "adress": "string",
+  "password": "string",
+  "isAdmin": false
+}
+
+- Response 
+200 
+{
+}
+400
+{
+}
+-- Lägga till ny produkt till kundens shoppingcart i databasen(SQL)
+- Request 
+POST/api/add/shoppingcart
+Body: 
+{
+  "shoppingCartId": 0,
+  "productId": 0,
+  "quantity": 0
+}
+
+- Response 
+200 
+{
+}
+
+-- Skapa ny shoppingcart i databasen(SQL)
+- Request 
+POST/api/add/shoppingcart/create
+Body: 
+{
+  "id": 0,
+  "customerId": 0,
+  "activeCart": true,
+  "shoppingCartProducts": [
+    {
+      "id": 0,
+      "shoppingCartId": 0,
+      "productId": 0,
+      "product": {
+        "productId": 0,
+        "name": "string",
+        "price": 0,
+        "quantity": 0,
+        "category": "string",
+        "description": "string",
+        "isEditing": true,
+        "isAvailable": true
+      },
+      "quantity": 0
+    }
+  ]
+}
+
+- Response 
+200 
+{
+"Id": 1,
+"CustomerId": 3,
+"ActiveCart": true,
+}
+<- AddController
+
+-> AuthController
+-- Logga ut kunden.
+- Request 
+POST/api/auth/logout
+Body: 
+{
+  "id": 0,
+  "firstName": "string",
+  "lastName": "string",
+  "email": "string",
+  "phoneNumber": "string",
+  "adress": "string",
+  "password": "string",
+  "isAdmin": true
+}
+
+- Response 
+200 
+{
+}
+400
+{
+}
+
+-- Logga in kunden.
+- Request 
+POST/api/auth/login
+Body: 
+{
+  "id": 0,
+  "firstName": "string",
+  "lastName": "string",
+  "email": "string",
+  "phoneNumber": "string",
+  "adress": "string",
+  "password": "string",
+  "isAdmin": true
+}
+
+- Response 
+200 
+{
+  "id": 5,
+  "firstName": "string",
+  "lastName": "string",
+  "email": "string",
+  "phoneNumber": "string",
+  "adress": "string",
+  "password": "string",
+  "isAdmin": true
+}
+
+401
+{
+}
+<- AuthController
+
+-> FetchController
+-- Hämta alla produkter
+- Request 
+GET/api/fetch/products
+Body: 
+[
+  {
+    "productId": 1,
+    "name": "Banana",
+    "price": 50,
+    "quantity": 30,
+    "category": "Fruits",
+    "description": "Yellow fruit",
+    "isEditing": false,
+    "isAvailable": true
+  },
+  ...
+]
+
+- Response 
+200 
+{
+}
+
+-- Hämta alla kunder
+- Request 
+GET/api/fetch/customers
+Body: 
+[
+  {
+    "id": 2,
+    "firstName": "Henrik",
+    "lastName": "Vu",
+    "email": "henkepro@hotmail.com",
+    "phoneNumber": "",
+    "adress": "qweqwe",
+    "password": "wc3",
+    "isAdmin": false
+  },
+  ...
+]
+
+- Response 
+200 
+{
+}
+
+-- Hämta kundens kundvagn
+- Request 
+GET/api/fetch/shoppingcart/{customerId}
+Body: 
+{
+  "customerId": 1,
+}
+
+- Response 
+200 
+{
+  "id": 1,
+  "customerId": 1,
+  "activeCart": true,
+  "shoppingCartProducts": [
+    {
+      "id": 1,
+      "shoppingCartId": 1,
+      "productId": 2,
+      "product": {
+        "productId": 2,
+        "name": "Apple",
+        "price": 500,
+        "quantity": 20,
+        "category": "Fruits",
+        "description": "Red fruit",
+        "isEditing": false,
+        "isAvailable": true
+      },
+      "quantity": 4
+    },
+    {
+      "id": 2,
+      "shoppingCartId": 1,
+      "productId": 4,
+      "product": {
+        "productId": 4,
+        "name": "Coca-cola",
+        "price": 20,
+        "quantity": 300,
+        "category": "Drinks",
+        "description": "healthy drink",
+        "isEditing": false,
+        "isAvailable": true
+      },
+      "quantity": 2
+    },
+  ]
+}
+
+<- FetchController
+
+-> RemoveController
+-- Ta bort specifik produkt
+- Request 
+DELETE/api/remove/product/{id}
+Body: 
+{
+  "id": 1,
+}
+
+- Response 
+200 
+{
+  "productId": 1,
+  "name": "Banana",
+  "price": 50,
+  "quantity": 30,
+  "category": "Fruits",
+  "description": "Yellow fruit",
+  "isEditing": false,
+  "isAvailable": true
+}
+404
+{
+}
+
+-- Ta bort specifik kund
+- Request 
+DELETE/api/remove/customer/{id}
+Body: 
+{
+  "id": 1,
+}
+
+- Response 
+200 
+{
+    "id": 2,
+    "firstName": "Henrik",
+    "lastName": "Vu",
+    "email": "henkepro@hotmail.com",
+    "phoneNumber": "",
+    "adress": "qweqwe",
+    "password": "wc3",
+    "isAdmin": false
+}
+404
+{
+}
+
+-- Ta bort produkt från en specifik shoppingcart
+- Request 
+DELETE/api/remove/shoppingcart/{cartId}/{productId}
+Body: 
+{
+  "cartId": 1,
+  "productId": 1,
+}
+
+- Response 
+200 
+{
+}
+
+<- RemoveController
+
+-> SearchController
+-- Sök efter en produkt med text
+- Request 
+GET/api/search/product
+Body: 
+{
+  "text....."
+}
+
+- Response 
+200 
+[
+  {
+    "productId": 2,
+    "name": "Apple",
+    "price": 500,
+    "quantity": 20,
+    "category": "Fruits",
+    "description": "Red fruit",
+    "isEditing": false,
+    "isAvailable": true
+  },
+  {
+    "productId": 4,
+    "name": "Coca-cola",
+    "price": 20,
+    "quantity": 300,
+    "category": "Drinks",
+    "description": "healthy drink",
+    "isEditing": false,
+    "isAvailable": true
+  },
+]
+200
+[
+  {
+
+  }
+]
+400
+{
+  "Search query cannot be empty."
+}
+
+-- Sök efter en produkt med specifikt id
+- Request 
+GET/api/search/{productId}
+Body: 
+{
+  "productId": 1,
+}
+
+- Response 
+200 
+{
+"productId": 1,
+"name": "Apple",
+"price": 500,
+"quantity": 20,
+"category": "Fruits",
+"description": "Red fruit",
+"isEditing": false,
+"isAvailable": true
+}
+400
+{
+}
+404
+{
+}
+
+-- Sök efter en kunds mail med text
+- Request 
+GET/api/search/email
+Body: 
+{
+  "text....."
+}
+
+- Response 
+200 
+[
+  {
+    "id": 2,
+    "firstName": "Henrik",
+    "lastName": "Vu",
+    "email": "henkepro@hotmail.com",
+    "phoneNumber": "",
+    "adress": "qweqwe",
+    "password": "wc3",
+    "isAdmin": false
+  },
+  {
+    "id": 3,
+    "firstName": "Henrik",
+    "lastName": "Vu",
+    "email": "henkepro@hotmail.com",
+    "phoneNumber": "",
+    "adress": "qweqwe",
+    "password": "wc3",
+    "isAdmin": false
+  }
+]
+400
+{
+  "Email query cannot be empty"
+}
+
+<- SearchController
+
+-> ToggleController
+-- Toggla en produkts status
+- Request 
+PUT/api/toggle
+Body: 
+{
+  "productId": 0,
+  "name": "string",
+  "price": 0,
+  "quantity": 0,
+  "category": "string",
+  "description": "string",
+  "isEditing": true,
+  "isAvailable": true
+}
+
+- Response 
+200
+{
+  "productId": 0,
+  "name": "string",
+  "price": 0,
+  "quantity": 0,
+  "category": "string",
+  "description": "string",
+  "isEditing": true,
+  "isAvailable": true
+}
+
+404
+{
+}
+<- ToggleController
+
+-> UpdateController
+-- Uppdate en specifik kunds information
+- Request 
+PUT/api/update/customer/{id}
+Body:
+{
+  "id", 1,
+},
+{
+  "id": 1,
+  "firstName": "Admin",
+  "lastName": "Admin",
+  "email": "Admin",
+  "phoneNumber": "Admin",
+  "adress": "Admin",
+  "password": "Admin",
+  "isAdmin": true
+}
+
+- Response 
+200
+{
+  "id": 1,
+  "firstName": "Admin",
+  "lastName": "Admin",
+  "email": "Admin",
+  "phoneNumber": "Admin",
+  "adress": "Admin",
+  "password": "Admin",
+  "isAdmin": true
+}
+
+400
+{
+}
+
+-- Uppdate en specifik produkts information
+- Request 
+PUT/api/update/product/{id}
+Body:
+{
+  "id", 1,
+},
+{
+  "productId": 0,
+  "name": "Apple",
+  "price": 0,
+  "quantity": 0,
+  "category": "Fruits",
+  "description": "string",
+  "isEditing": true,
+  "isAvailable": true
+}
+
+- Response 
+200
+{
+  "productId": 0,
+  "name": "Apple",
+  "price": 0,
+  "quantity": 0,
+  "category": "Fruits",
+  "description": "string",
+  "isEditing": true,
+  "isAvailable": true
+}
+
+404
+{
+}
+<- UpdateController

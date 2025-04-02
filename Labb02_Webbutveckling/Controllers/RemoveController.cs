@@ -1,49 +1,51 @@
-﻿namespace Labb02_Webbutveckling.Controllers;
-using Labb02_Webbutveckling.Model;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-
-[ApiController]
-[Route("api/remove")]
-public class RemoveController : ControllerBase
+﻿namespace Labb02_Webbutveckling.Controllers
 {
-    private readonly MyContext _dbContext;
+    using Microsoft.AspNetCore.Mvc;
+    using Labb02_Webbutveckling.Repository;
 
-    public RemoveController(MyContext dbContext)
+    [ApiController]
+    [Route("api/remove")]
+    public class RemoveController : ControllerBase
     {
-        _dbContext = dbContext;
-    }
-    [HttpDelete("product/{id}")]
-    public async Task<IActionResult> RemoveProduct(int id)
-    {
-        var product = await _dbContext.Products.FindAsync(id);
-        if(product == null) return NotFound();
+        private readonly IProductRepository _productRepository;
+        private readonly ICustomerRepository _customerRepository;
+        private readonly IShoppingCartRepository _shoppingCartRepository;
 
-        _dbContext.Products.Remove(product);
-        await _dbContext.SaveChangesAsync();
+        public RemoveController(IProductRepository productRepository, ICustomerRepository customerRepository, IShoppingCartRepository shoppingCartRepository)
+        {
+            _productRepository = productRepository;
+            _customerRepository = customerRepository;
+            _shoppingCartRepository = shoppingCartRepository;
+        }
 
-        return Ok(product);
-    }
+        [HttpDelete("product/{id}")]
+        public async Task<IActionResult> RemoveProduct(int id)
+        {
+            var product = await _productRepository.GetProductByIdAsync(id);
+            if(product == null) return NotFound();
 
-    [HttpDelete("customer/{id}")]
-    public async Task<IActionResult> RemoveCustomer(int id)
-    {
-        var customer = await _dbContext.Customers.FindAsync(id);
-        if(customer == null) return NotFound();
+            await _productRepository.RemoveProductAsync(product);
+            return Ok(product);
+        }
 
-        _dbContext.Customers.Remove(customer);
-        await _dbContext.SaveChangesAsync();
+        [HttpDelete("customer/{id}")]
+        public async Task<IActionResult> RemoveCustomer(int id)
+        {
+            var customer = await _customerRepository.GetCustomerByIdAsync(id);
+            if(customer == null) return NotFound();
 
-        return Ok(customer);
-    }
-    [HttpDelete("shoppingcart/{cartId}/{productId}")]
-    public async Task<IActionResult> RemoveFromCart(int cartId, int productId)
-    {
-        var cartItem = await _dbContext.ShoppingCartProducts
-            .FirstOrDefaultAsync(cp => cp.ShoppingCartId == cartId && cp.ProductId == productId);
+            await _customerRepository.RemoveCustomerAsync(customer);
+            return Ok(customer);
+        }
 
-        _dbContext.ShoppingCartProducts.Remove(cartItem);
-        await _dbContext.SaveChangesAsync();
-        return Ok();
+        [HttpDelete("shoppingcart/{cartId}/{productId}")]
+        public async Task<IActionResult> RemoveFromCart(int cartId, int productId)
+        {
+            var cartItem = await _shoppingCartRepository.GetCartItemAsync(cartId, productId);
+            if(cartItem == null) return NotFound();
+
+            await _shoppingCartRepository.RemoveCartItemAsync(cartItem);
+            return Ok();
+        }
     }
 }

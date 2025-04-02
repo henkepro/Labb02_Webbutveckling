@@ -1,68 +1,67 @@
-﻿namespace Labb02_Webbutveckling.Controllers;
-using Labb02_Webbutveckling.Model;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-
-[ApiController]
-[Route("api/search")]
-public class SearchController : ControllerBase
+﻿namespace Labb02_Webbutveckling.Controllers
 {
-    private readonly MyContext _dbContext;
+    using Labb02_Webbutveckling.Model;
+    using Microsoft.AspNetCore.Mvc;
+    using Labb02_Webbutveckling.Repository;
 
-    public SearchController(MyContext dbContext)
+    [ApiController]
+    [Route("api/search")]
+    public class SearchController : ControllerBase
     {
-        _dbContext = dbContext;
-    }
-    [HttpGet("product")]
-    public async Task<IActionResult> SearchProducts([FromQuery] string product)
-    {
-        if(string.IsNullOrWhiteSpace(product))
+        private readonly IProductRepository _productRepository;
+        private readonly ICustomerRepository _customerRepository;
+
+        public SearchController(IProductRepository productRepository, ICustomerRepository customerRepository)
         {
-            return BadRequest("Search query cannot be empty.");
+            _productRepository = productRepository;
+            _customerRepository = customerRepository;
         }
 
-        var products = await _dbContext.Products
-        .Where(c => c.Name.ToLower().Contains(product.ToLower()))
-        .ToListAsync();
-
-        if(products.Count == 0)
+        [HttpGet("product")]
+        public async Task<IActionResult> SearchProducts([FromQuery] string product)
         {
-            return Ok(new List<Product>());
+            if(string.IsNullOrWhiteSpace(product))
+            {
+                return BadRequest("Search query cannot be empty.");
+            }
+
+            var products = await _productRepository.SearchProductsByNameAsync(product);
+
+            if(products.Count == 0)
+            {
+                return Ok(new List<Product>());
+            }
+
+            return Ok(products);
         }
 
-        return Ok(products);
-    }
-
-    [HttpGet("{productId}")]
-    public async Task<IActionResult> SearchProductsById(int productId)
-    {
-        if(productId <= 0)
+        [HttpGet("{productId}")]
+        public async Task<IActionResult> SearchProductById(int productId)
         {
-            return BadRequest();
+            if(productId <= 0)
+            {
+                return BadRequest();
+            }
+
+            var product = await _productRepository.GetProductByIdAsync(productId);
+
+            if(product == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(product);
         }
 
-        var product = await _dbContext.Products
-        .FirstOrDefaultAsync(c => c.ProductId == productId);
-
-        if(product == null)
+        [HttpGet("email")]
+        public async Task<IActionResult> SearchCustomersByEmail([FromQuery] string email)
         {
-            return NotFound();
+            if(string.IsNullOrWhiteSpace(email))
+                return BadRequest("Email query cannot be empty");
+
+            var customers = await _customerRepository.SearchCustomersByEmailAsync(email);
+
+            return Ok(customers);
         }
-
-        return Ok(product);
-    }
-
-
-    [HttpGet("email")]
-    public async Task<IActionResult> SearchCustomersByEmail([FromQuery] string email)
-    {
-        if(string.IsNullOrWhiteSpace(email))
-            return BadRequest(new { message = "Email query cannot be empty" });
-
-        var customers = await _dbContext.Customers
-        .Where(c => c.Email.ToLower().Contains(email.ToLower()))
-        .ToListAsync();
-
-        return Ok(customers);
     }
 }

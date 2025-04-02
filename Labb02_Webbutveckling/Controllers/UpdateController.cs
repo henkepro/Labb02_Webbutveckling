@@ -1,49 +1,55 @@
-﻿namespace Labb02_Webbutveckling.Controllers;
-using Labb02_Webbutveckling.Model;
+﻿using Labb02_Webbutveckling.Model;
+using Labb02_Webbutveckling.Repository;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
-
-[ApiController]
-[Route("api/update")]
-public class UpdateController : ControllerBase
+namespace Labb02_Webbutveckling.Controllers
 {
-    private readonly MyContext _dbContext;
-
-    public UpdateController(MyContext dbContext)
+    [ApiController]
+    [Route("api/update")]
+    public class UpdateController : ControllerBase
     {
-        _dbContext = dbContext;
-    }
-    [HttpPut("customer/{id}")]
-    public async Task<IActionResult> UpdateCustomer(int id, [FromBody] Customer updatedCustomer)
-    {
-        if(updatedCustomer == null) return BadRequest();
+        private readonly ICustomerRepository _customerRepository;
+        private readonly IProductRepository _productRepository;
 
-        var customer = await _dbContext.Customers.FindAsync(id);
+        public UpdateController(ICustomerRepository customerRepository, IProductRepository productRepository)
+        {
+            _customerRepository = customerRepository;
+            _productRepository = productRepository;
+        }
 
-        customer.FirstName = updatedCustomer.FirstName;
-        customer.LastName = updatedCustomer.LastName;
-        customer.Email = updatedCustomer.Email;
-        customer.PhoneNumber = updatedCustomer.PhoneNumber;
-        customer.Password = updatedCustomer.Password;
+        [HttpPut("customer/{id}")]
+        public async Task<IActionResult> UpdateCustomer(int id, [FromBody] Customer updatedCustomer)
+        {
+            if (updatedCustomer == null) return BadRequest();
 
-        await _dbContext.SaveChangesAsync();
-        return Ok(customer);
-    }
+            var customer = await _customerRepository.GetCustomerByIdAsync(id);
+            if (customer == null) return NotFound();
 
-    [HttpPut("product/{id}")]
-    public async Task<IActionResult> UpdateProduct(int id, [FromBody] Product updatedProduct)
-    {
-        var product = await _dbContext.Products.FindAsync(id);
-        if(product == null) return NotFound();
+            customer.FirstName = updatedCustomer.FirstName;
+            customer.LastName = updatedCustomer.LastName;
+            customer.Email = updatedCustomer.Email;
+            customer.PhoneNumber = updatedCustomer.PhoneNumber;
+            customer.Password = updatedCustomer.Password;
+            customer.Adress = updatedCustomer.Adress;
 
-        product.Name = updatedProduct.Name;
-        product.Price = updatedProduct.Price;
-        product.Quantity = updatedProduct.Quantity;
-        product.Description = updatedProduct.Description;
-        product.Category = updatedProduct.Category;
+            await _customerRepository.UpdateCustomerAsync(customer);
+            return Ok(customer);
+        }
 
-        await _dbContext.SaveChangesAsync();
-        return Ok(product);
+        [HttpPut("product/{id}")]
+        public async Task<IActionResult> UpdateProduct(int id, [FromBody] Product updatedProduct)
+        {
+            var product = await _productRepository.GetProductByIdAsync(id);
+            if (product == null) return NotFound();
+
+            product.Name = updatedProduct.Name;
+            product.Price = updatedProduct.Price;
+            product.Quantity = updatedProduct.Quantity;
+            product.Description = updatedProduct.Description;
+            product.Category = updatedProduct.Category;
+
+            await _productRepository.UpdateProductAsync(product);
+            return Ok(product);
+        }
     }
 }

@@ -1,49 +1,55 @@
-﻿namespace Labb02_Webbutveckling.Controllers;
-
-using Labb02_Webbutveckling.Model;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-
-[ApiController]
-[Route("api/fetch")]
-public class FetchController : ControllerBase
+﻿namespace Labb02_Webbutveckling.Controllers
 {
-    private readonly MyContext _dbContext;
+    using Labb02_Webbutveckling.Model;
+    using Microsoft.AspNetCore.Mvc;
+    using Labb02_Webbutveckling.Repository;
 
-    public FetchController(MyContext dbContext)
+    [ApiController]
+    [Route("api/fetch")]
+    public class FetchController : ControllerBase
     {
-        _dbContext = dbContext;
-    }
-    [HttpGet("products")]
-    public async Task<IActionResult> GetProducts()
-    {
-        return Ok(await _dbContext.Products.ToListAsync());
-    }
-    [HttpGet("customers")]
-    public async Task<IActionResult> GetCustomers()
-    {
-        return Ok(await _dbContext.Customers.ToListAsync());
-    }
-    [HttpGet("shoppingcart/{customerId}")]
-    public async Task<IActionResult> GetCart(int customerId)
-    {
-        var shoppingCart = await _dbContext.ShoppingCarts
-            .Include(sc => sc.ShoppingCartProducts)
-            .ThenInclude(sp => sp.Product)
-            .FirstOrDefaultAsync(sc => sc.CustomerId == customerId);
+        private readonly IProductRepository _productRepository;
+        private readonly ICustomerRepository _customerRepository;
+        private readonly IShoppingCartRepository _shoppingCartRepository;
 
-        if(shoppingCart == null)
+        public FetchController(IProductRepository productRepository, ICustomerRepository customerRepository, IShoppingCartRepository shoppingCartRepository)
         {
-            shoppingCart = new ShoppingCart
-            {
-                CustomerId = customerId,
-                ShoppingCartProducts = new List<ShoppingCartProduct>()
-            };
-
-            await _dbContext.ShoppingCarts.AddAsync(shoppingCart);
-            await _dbContext.SaveChangesAsync();
+            _productRepository = productRepository;
+            _customerRepository = customerRepository;
+            _shoppingCartRepository = shoppingCartRepository;
         }
 
-        return Ok(shoppingCart);
+        [HttpGet("products")]
+        public async Task<IActionResult> GetProducts()
+        {
+            var products = await _productRepository.GetAllProductsAsync();
+            return Ok(products);
+        }
+
+        [HttpGet("customers")]
+        public async Task<IActionResult> GetCustomers()
+        {
+            var customers = await _customerRepository.GetAllCustomersAsync();
+            return Ok(customers);
+        }
+
+        [HttpGet("shoppingcart/{customerId}")]
+        public async Task<IActionResult> GetCart(int customerId)
+        {
+            var shoppingCart = await _shoppingCartRepository.GetShoppingCartByCustomerIdAsync(customerId);
+
+            if(shoppingCart == null)
+            {
+                shoppingCart = new ShoppingCart
+                {
+                    CustomerId = customerId,
+                    ShoppingCartProducts = new List<ShoppingCartProduct>()
+                };
+
+                await _shoppingCartRepository.CreateShoppingCartAsync(shoppingCart);
+            }
+
+            return Ok(shoppingCart);
+        }
     }
 }

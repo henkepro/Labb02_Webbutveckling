@@ -2,6 +2,7 @@ using Labb02_Webbutveckling.Components;
 using Labb02_Webbutveckling.DataModels;
 using Labb02_Webbutveckling.Middleware;
 using Labb02_Webbutveckling.Model;
+using Labb02_Webbutveckling.Repository;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -25,6 +26,10 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<ShoppingCartProductModel>();
+builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
+builder.Services.AddScoped<IProductRepository, ProductRepository>();
+builder.Services.AddScoped<IShoppingCartRepository, ShoppingCartRepository>();
+builder.Services.AddScoped<IAuthRepository, AuthRepository>();
 
 var app = builder.Build();
 
